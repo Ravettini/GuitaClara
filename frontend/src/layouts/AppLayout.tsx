@@ -25,7 +25,7 @@ export default function AppLayout() {
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 w-full overflow-x-hidden">
       {/* Mobile header */}
       <header className="lg:hidden bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between">
         <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
@@ -39,7 +39,7 @@ export default function AppLayout() {
         </button>
       </header>
 
-      <div className="flex">
+      <div className="flex w-full">
         {/* Sidebar */}
         <aside
           className={`${
@@ -95,8 +95,8 @@ export default function AppLayout() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 lg:ml-0 pb-20 md:pb-0">
-          <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+        <main className="flex-1 lg:ml-0 pb-20 md:pb-0 w-full">
+          <div className="p-4 lg:p-6 lg:max-w-7xl lg:mx-auto w-full">
             <Outlet />
           </div>
         </main>

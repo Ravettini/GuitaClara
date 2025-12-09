@@ -411,87 +411,177 @@ export default function Transactions() {
           {filteredTransactions.map((transaction: any) => (
             <div
               key={transaction.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-card p-4 flex items-center justify-between hover:shadow-card-hover transition cursor-pointer"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-card p-4 hover:shadow-card-hover transition cursor-pointer"
               onClick={() => {
                 setEditing(transaction)
                 setFormType(transaction._type)
                 setShowForm(true)
               }}
             >
-              <div className="flex items-center gap-4 flex-1">
-                <div
-                  className={`
-                    w-12 h-12 rounded-lg flex items-center justify-center text-xl
-                    ${transaction._type === 'income'
-                      ? 'bg-success-soft dark:bg-green-900'
-                      : 'bg-danger-soft dark:bg-red-900'
-                    }
-                  `}
-                >
-                  {transaction.category?.icon || (transaction._type === 'income' ? '💰' : '💸')}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 dark:text-white truncate">
-                    {transaction.description || transaction.category?.name || 'Sin descripción'}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatDate(transaction.date)}
-                    </span>
-                    {transaction.paymentMethod && (
-                      <>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {transaction.paymentMethod}
-                        </span>
-                      </>
-                    )}
-                    {transaction.sourceType && (
-                      <>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {transaction.sourceType}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="text-right flex items-center gap-3">
-                <div>
-                  <p
+              {/* Desktop Layout */}
+              <div className="hidden md:flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <div
                     className={`
-                      font-semibold text-lg
+                      w-12 h-12 rounded-lg flex items-center justify-center text-xl
                       ${transaction._type === 'income'
-                        ? 'text-success dark:text-green-400'
-                        : 'text-danger dark:text-red-400'
+                        ? 'bg-success-soft dark:bg-green-900'
+                        : 'bg-danger-soft dark:bg-red-900'
                       }
                     `}
                   >
-                    {transaction._type === 'income' ? '+' : '-'}
-                    {formatCurrency(Number(transaction.amount), transaction.currency)}
-                  </p>
-                  <Badge variant={transaction._type === 'income' ? 'success' : 'danger'} size="sm">
-                    {transaction.currency}
-                  </Badge>
+                    <span className="text-gray-900 dark:text-gray-100" style={{ filter: 'none' }}>
+                      {transaction.category?.icon || (transaction._type === 'income' ? '💰' : '💸')}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">
+                      {transaction.description || transaction.category?.name || 'Sin descripción'}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatDate(transaction.date)}
+                      </span>
+                      {transaction.paymentMethod && (
+                        <>
+                          <span className="text-xs text-gray-400">•</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {transaction.paymentMethod}
+                          </span>
+                        </>
+                      )}
+                      {transaction.sourceType && (
+                        <>
+                          <span className="text-xs text-gray-400">•</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {transaction.sourceType}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (transaction._type === 'income') {
-                      if (confirm('¿Eliminar este ingreso?')) {
-                        deleteIncomeMutation.mutate(transaction.id)
+                <div className="text-right flex items-center gap-3">
+                  <div>
+                    <p
+                      className={`
+                        font-semibold text-lg
+                        ${transaction._type === 'income'
+                          ? 'text-success dark:text-green-400'
+                          : 'text-danger dark:text-red-400'
+                        }
+                      `}
+                    >
+                      {transaction._type === 'income' ? '+' : '-'}
+                      {formatCurrency(Number(transaction.amount), transaction.currency)}
+                    </p>
+                    <Badge variant={transaction._type === 'income' ? 'success' : 'danger'} size="sm">
+                      {transaction.currency}
+                    </Badge>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (transaction._type === 'income') {
+                        if (confirm('¿Eliminar este ingreso?')) {
+                          deleteIncomeMutation.mutate(transaction.id)
+                        }
+                      } else {
+                        if (confirm('¿Eliminar este gasto?')) {
+                          deleteExpenseMutation.mutate(transaction.id)
+                        }
                       }
-                    } else {
-                      if (confirm('¿Eliminar este gasto?')) {
-                        deleteExpenseMutation.mutate(transaction.id)
+                    }}
+                    className="text-gray-400 hover:text-danger transition p-2"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile Layout */}
+              <div className="md:hidden">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div
+                      className={`
+                        w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0
+                        ${transaction._type === 'income'
+                          ? 'bg-success-soft dark:bg-green-900'
+                          : 'bg-danger-soft dark:bg-red-900'
+                        }
+                      `}
+                    >
+                      <span className="text-gray-900 dark:text-gray-100" style={{ filter: 'none' }}>
+                        {transaction.category?.icon || (transaction._type === 'income' ? '💰' : '💸')}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-white truncate">
+                        {transaction.description || transaction.category?.name || 'Sin descripción'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (transaction._type === 'income') {
+                        if (confirm('¿Eliminar este ingreso?')) {
+                          deleteIncomeMutation.mutate(transaction.id)
+                        }
+                      } else {
+                        if (confirm('¿Eliminar este gasto?')) {
+                          deleteExpenseMutation.mutate(transaction.id)
+                        }
                       }
-                    }
-                  }}
-                  className="text-gray-400 hover:text-danger transition p-2"
-                >
-                  🗑️
-                </button>
+                    }}
+                    className="text-gray-400 hover:text-danger transition p-1 flex-shrink-0"
+                  >
+                    🗑️
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Fecha</span>
+                    <span className="text-xs font-medium text-gray-900 dark:text-white">
+                      {formatDate(transaction.date)}
+                    </span>
+                  </div>
+                  {(transaction.paymentMethod || transaction.sourceType) && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {transaction.paymentMethod ? 'Método' : 'Tipo'}
+                      </span>
+                      <span className="text-xs font-medium text-gray-900 dark:text-white">
+                        {transaction.paymentMethod || transaction.sourceType}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Monto</span>
+                      <Badge 
+                        variant={transaction._type === 'income' ? 'success' : 'danger'} 
+                        size="sm"
+                        className="ml-2"
+                      >
+                        {transaction.currency}
+                      </Badge>
+                    </div>
+                    <p
+                      className={`
+                        font-bold text-lg
+                        ${transaction._type === 'income'
+                          ? 'text-success dark:text-green-400'
+                          : 'text-danger dark:text-red-400'
+                        }
+                      `}
+                    >
+                      {transaction._type === 'income' ? '+' : '-'}
+                      {formatCurrency(Number(transaction.amount), transaction.currency)}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           ))}

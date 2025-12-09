@@ -1,4 +1,4 @@
-import { PageHeader, Card } from '../components/ui'
+import { PageHeader, Card, Button } from '../components/ui'
 import { useState } from 'react'
 
 type FAQCategory = 'general' | 'transactions' | 'investments' | 'budgets' | 'goals' | 'export'

@@ -13,7 +13,7 @@ export function FAB({ onAction, actions }: FABProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50">
+    <div className="fixed bottom-20 right-4 md:hidden z-50">
       {isOpen && (
         <div className="absolute bottom-16 right-0 flex flex-col gap-2 mb-2">
           {actions.map((action) => (
@@ -41,10 +41,15 @@ export function FAB({ onAction, actions }: FABProps) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="
-          w-14 h-14 rounded-full bg-primary text-gray-900
-          shadow-elevated hover:bg-primary-dark
-          flex items-center justify-center text-2xl
-          transition-transform transform hover:scale-105
+          w-14 h-14 rounded-full
+          bg-gradient-to-br from-blue-600 to-indigo-600 text-white
+          md:bg-primary md:text-gray-900
+          shadow-elevated hover:shadow-lg
+          hover:from-blue-700 hover:to-indigo-700
+          md:hover:bg-primary-dark
+          flex items-center justify-center text-2xl font-bold
+          transition-all transform hover:scale-105
+          ring-4 ring-blue-200/50 md:ring-0
         "
       >
         {isOpen ? '✕' : '+'}

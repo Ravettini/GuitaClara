@@ -328,21 +328,21 @@ export default function Investments() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Inversiones</h1>
-        <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Inversiones</h1>
+        <div className="flex flex-wrap gap-2 items-center">
           {activeTab === 'portfolio' && (
             <>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleExportPortfolio('csv')}
-                  className="px-4 py-2 bg-blue-600 text-gray-900 rounded-lg hover:bg-blue-700 transition text-sm"
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs sm:text-sm whitespace-nowrap"
                 >
                   📥 CSV
                 </button>
                 <button
                   onClick={() => handleExportPortfolio('xlsx')}
-                  className="px-4 py-2 bg-green-600 text-gray-900 rounded-lg hover:bg-green-700 transition text-sm"
+                  className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs sm:text-sm whitespace-nowrap"
                 >
                   📥 XLSX
                 </button>
@@ -350,7 +350,7 @@ export default function Investments() {
               <button
                 onClick={() => updatePricesMutation.mutate()}
                 disabled={updatePricesMutation.isPending}
-                className="px-4 py-2 bg-green-600 text-gray-900 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
               >
                 {updatePricesMutation.isPending ? 'Actualizando...' : 'Actualizar Precios'}
               </button>
@@ -360,13 +360,13 @@ export default function Investments() {
             <div className="flex gap-2">
               <button
                 onClick={() => handleExportFixedTerms('csv')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs sm:text-sm whitespace-nowrap"
               >
                 📥 CSV
               </button>
               <button
                 onClick={() => handleExportFixedTerms('xlsx')}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+                className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs sm:text-sm whitespace-nowrap"
               >
                 📥 XLSX
               </button>
@@ -382,7 +382,7 @@ export default function Investments() {
                 setShowPositionForm(true)
               }
             }}
-            className="px-4 py-2 bg-primary text-gray-900 rounded-lg hover:bg-primary-dark transition font-medium shadow-sm"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary text-gray-900 rounded-lg hover:bg-primary-dark transition font-medium shadow-sm text-xs sm:text-sm whitespace-nowrap"
           >
             + Nuevo
           </button>
@@ -532,7 +532,8 @@ export default function Investments() {
             </div>
           )}
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
@@ -619,6 +620,77 @@ export default function Investments() {
             </table>
             {(!fixedTerms || fixedTerms.length === 0) && (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                No hay plazos fijos registrados
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {fixedTerms && fixedTerms.length > 0 ? (
+              fixedTerms.map((ft: any) => {
+                const isExpired = new Date(ft.computedMaturityDate) < new Date()
+                return (
+                  <div key={ft.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {ft.bankName || 'Sin banco'}
+                        </h3>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+                          ${Number(ft.principalAmount).toLocaleString('es-AR')} {ft.currency}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingFixedTerm(ft)
+                            setShowFixedTermForm(true)
+                          }}
+                          className="text-primary dark:text-blue-400 hover:underline text-sm font-medium"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('¿Estás seguro de eliminar este plazo fijo?')) {
+                              deleteFixedTermMutation.mutate(ft.id)
+                            }
+                          }}
+                          className="text-red-600 dark:text-red-400 hover:underline text-sm"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400">TNA</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{Number(ft.tna).toFixed(2)}%</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400">Interés</p>
+                        <p className="font-medium text-green-600 dark:text-green-400">
+                          ${Number(ft.computedInterestAmount).toLocaleString('es-AR')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400">Inicio</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{formatDate(ft.startDate)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400">Vencimiento</p>
+                        <p className={`font-medium ${isExpired ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                          {formatDate(ft.computedMaturityDate)}
+                          {isExpired && <span className="ml-1 text-xs">(Vencido)</span>}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg">
                 No hay plazos fijos registrados
               </div>
             )}
@@ -863,7 +935,8 @@ export default function Investments() {
             </div>
           )}
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
@@ -986,6 +1059,112 @@ export default function Investments() {
             </table>
             {(!portfolio || portfolio.length === 0) && (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <p className="mb-2">No hay posiciones registradas</p>
+                <p className="text-sm">Crea un instrumento y agrega una posición para empezar</p>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {portfolio && portfolio.length > 0 ? (
+              portfolio.map((item: any) => {
+                const typeLabels: Record<string, string> = {
+                  STOCK: 'Acción',
+                  CEDEAR: 'CEDEAR',
+                  BOND: 'Bono',
+                  LECAP: 'LECAP',
+                  ETF: 'ETF',
+                  OTHER: 'Otro',
+                }
+                return (
+                  <div key={item.position.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {item.instrument.ticker}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {item.instrument.name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {typeLabels[item.instrument.type] || item.instrument.type}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingPosition(item.position)
+                            setShowPositionForm(true)
+                          }}
+                          className="text-primary dark:text-blue-400 hover:underline text-sm font-medium"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('¿Estás seguro de eliminar esta posición?')) {
+                              deletePositionMutation.mutate(item.position.id)
+                            }
+                          }}
+                          className="text-red-600 dark:text-red-400 hover:underline text-sm"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Cantidad</span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {Number(item.position.quantity).toLocaleString('es-AR')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Precio Compra</span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {formatCurrency(Number(item.position.averageBuyPrice), item.instrument.currency)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Precio Actual</span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {item.lastPrice ? formatCurrency(item.lastPrice, item.instrument.currency) : 'Sin precio'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Valor Total</span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {formatCurrency(item.currentValue, item.instrument.currency)}
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-500 dark:text-gray-400">Ganancia/Pérdida</span>
+                          <div className="text-right">
+                            <p className={`font-semibold ${
+                              item.pnl >= 0
+                                ? 'text-green-600 dark:text-green-400'
+                                : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {item.pnl >= 0 ? '↑' : '↓'} {formatCurrency(Math.abs(item.pnl), item.instrument.currency)}
+                            </p>
+                            <p className={`text-xs ${
+                              item.pnl >= 0
+                                ? 'text-green-500 dark:text-green-400'
+                                : 'text-red-500 dark:text-red-400'
+                            }`}>
+                              {item.pnlPercent >= 0 ? '+' : ''}{item.pnlPercent.toFixed(2)}%
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg">
                 <p className="mb-2">No hay posiciones registradas</p>
                 <p className="text-sm">Crea un instrumento y agrega una posición para empezar</p>
               </div>
