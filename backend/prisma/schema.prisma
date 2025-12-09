@@ -1,0 +1,241 @@
+// This is your Prisma schema file for Supabase PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  categories   Category[]
+  incomes      Income[]
+  expenses     Expense[]
+  fixedTerms   FixedTermDeposit[]
+  instruments  InvestmentInstrument[]
+  positions    InvestmentPosition[]
+  budgets      Budget[]
+  goals        Goal[]
+  recurringTransactions RecurringTransaction[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  type      CategoryType
+  color     String?
+  icon      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  incomes   Income[]
+  expenses  Expense[]
+  budgets   Budget[]
+  recurringTransactions RecurringTransaction[]
+
+  @@index([userId, type])
+  @@map("categories")
+}
+
+enum CategoryType {
+  EXPENSE
+  INCOME
+  BOTH
+}
+
+model Income {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @db.Uuid
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String?     @db.Uuid
+  category    Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  amount      Decimal     @db.Decimal(18, 2)
+  currency    String      @default("ARS")
+  date        DateTime
+  description String?
+  sourceType  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, date])
+  @@index([userId, categoryId])
+  @@index([userId, currency])
+  @@map("incomes")
+}
+
+model Expense {
+  id            String      @id @default(uuid()) @db.Uuid
+  userId        String      @db.Uuid
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId    String      @db.Uuid
+  category      Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  amount        Decimal     @db.Decimal(18, 2)
+  currency      String      @default("ARS")
+  date          DateTime
+  description   String?
+  paymentMethod String?
+  tags          Json?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId, date])
+  @@index([userId, categoryId])
+  @@index([userId, currency])
+  @@map("expenses")
+}
+
+model FixedTermDeposit {
+  id                     String   @id @default(uuid()) @db.Uuid
+  userId                 String   @db.Uuid
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  principalAmount        Decimal  @db.Decimal(18, 2)
+  currency               String   @default("ARS")
+  tna                    Decimal  @db.Decimal(8, 4)
+  startDate              DateTime
+  termInDays             Int
+  bankName               String?
+  autoRenew              Boolean  @default(false)
+  computedMaturityDate   DateTime
+  computedInterestAmount Decimal  @db.Decimal(18, 2)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([userId, startDate])
+  @@map("fixed_term_deposits")
+}
+
+model InvestmentInstrument {
+  id        String                 @id @default(uuid()) @db.Uuid
+  userId    String                 @db.Uuid
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticker    String
+  name      String
+  type      InvestmentInstrumentType
+  market    String
+  currency  String
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+
+  positions InvestmentPosition[]
+  prices    InvestmentPriceSnapshot[]
+
+  @@unique([userId, ticker])
+  @@index([userId, ticker])
+  @@map("investment_instruments")
+}
+
+enum InvestmentInstrumentType {
+  STOCK
+  CEDEAR
+  BOND
+  LECAP
+  ETF
+  OTHER
+}
+
+model InvestmentPosition {
+  id              String               @id @default(uuid()) @db.Uuid
+  userId          String               @db.Uuid
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrumentId    String               @db.Uuid
+  instrument      InvestmentInstrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  quantity        Decimal              @db.Decimal(18, 4)
+  averageBuyPrice Decimal              @db.Decimal(18, 4)
+  accountName     String?
+  brokerName      String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([userId, instrumentId])
+  @@map("investment_positions")
+}
+
+model InvestmentPriceSnapshot {
+  id           String               @id @default(uuid()) @db.Uuid
+  instrumentId String               @db.Uuid
+  instrument   InvestmentInstrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  price        Decimal              @db.Decimal(18, 4)
+  currency     String
+  at           DateTime             @default(now())
+
+  @@index([instrumentId, at])
+  @@map("investment_price_snapshots")
+}
+
+model Budget {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId   String    @db.Uuid
+  category     Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  amount       Decimal   @db.Decimal(18, 2)
+  currency     String    @default("ARS")
+  periodStart  DateTime
+  periodEnd    DateTime
+  repeat       Boolean   @default(false)
+  repeatUntil  DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId, periodStart, periodEnd])
+  @@index([userId, categoryId])
+  @@map("budgets")
+}
+
+model Goal {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @db.Uuid
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  targetAmount    Decimal   @db.Decimal(18, 2)
+  currency        String    @default("ARS")
+  targetDate      DateTime
+  calculationMode String    @default("ACCOUNT_BALANCE") // ACCOUNT_BALANCE | TAG_SUM
+  tagKey          String?
+  status          String    @default("ACTIVE") // ACTIVE | COMPLETED | CANCELLED
+  notes            String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, targetDate])
+  @@map("goals")
+}
+
+model RecurringTransaction {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @db.Uuid
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String    // INCOME | EXPENSE
+  categoryId      String?   @db.Uuid
+  category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  amountEstimate  Decimal?  @db.Decimal(18, 2)
+  currency        String    @default("ARS")
+  frequency       String    // MONTHLY | WEEKLY | YEARLY | CUSTOM
+  customDays      Int?
+  nextOccurrence  DateTime
+  autoCreate      Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  description     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, nextOccurrence])
+  @@index([userId, isActive])
+  @@map("recurring_transactions")
+}
+

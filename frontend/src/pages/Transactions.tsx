@@ -1,0 +1,503 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { incomeService, expenseService, categoryService } from '../services/api'
+import { formatDate, formatCurrency } from '../utils/format'
+import { PageHeader, EmptyState, Button, Badge } from '../components/ui'
+import DateInput from '../components/DateInput'
+import { useToast } from '../components/ui/Toast'
+
+type TransactionType = 'all' | 'income' | 'expense'
+
+export default function Transactions() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [type, setType] = useState<TransactionType>(
+    (searchParams.get('type') as TransactionType) || 'all'
+  )
+  const [showForm, setShowForm] = useState(false)
+  const [formType, setFormType] = useState<'income' | 'expense'>(
+    (searchParams.get('action') === 'create' && searchParams.get('type') === 'income') ? 'income' : 'expense'
+  )
+  const [editing, setEditing] = useState<any>(null)
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'create') {
+      setShowForm(true)
+      if (searchParams.get('type') === 'income') {
+        setFormType('income')
+      } else if (searchParams.get('type') === 'expense') {
+        setFormType('expense')
+      }
+    }
+  }, [searchParams])
+
+  const { data: incomes } = useQuery({
+    queryKey: ['incomes'],
+    queryFn: () => incomeService.getAll().then((r) => r.data.data),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
+  })
+
+  const { data: expenses } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => expenseService.getAll().then((r) => r.data.data),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
+  })
+
+  const { data: incomeCategories } = useQuery({
+    queryKey: ['categories', 'INCOME'],
+    queryFn: () => categoryService.getAll('INCOME').then((r) => r.data.data),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  })
+
+  const { data: expenseCategories } = useQuery({
+    queryKey: ['categories', 'EXPENSE'],
+    queryFn: () => categoryService.getAll('EXPENSE').then((r) => r.data.data),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  })
+
+  // Combinar y filtrar transacciones
+  const allTransactions = [
+    ...(incomes || []).map((inc: any) => ({ ...inc, _type: 'income' as const })),
+    ...(expenses || []).map((exp: any) => ({ ...exp, _type: 'expense' as const })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  const filteredTransactions = allTransactions.filter((t) => {
+    if (type === 'all') return true
+    return t._type === type
+  })
+
+  const createIncomeMutation = useMutation({
+    mutationFn: incomeService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomes', 'analytics'] })
+      setShowForm(false)
+      toast({ message: 'Ingreso creado', type: 'success' })
+    },
+    onError: () => {
+      toast({ message: 'Error al crear ingreso', type: 'error' })
+    },
+  })
+
+  const createExpenseMutation = useMutation({
+    mutationFn: expenseService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', 'analytics'] })
+      setShowForm(false)
+      setSearchParams({})
+      toast({ message: 'Gasto creado', type: 'success' })
+    },
+    onError: () => {
+      toast({ message: 'Error al crear gasto', type: 'error' })
+    },
+  })
+
+  const updateIncomeMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => incomeService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomes', 'analytics'] })
+      setShowForm(false)
+      setEditing(null)
+      setSearchParams({})
+      toast({ message: 'Ingreso actualizado', type: 'success' })
+    },
+    onError: () => {
+      toast({ message: 'Error al actualizar ingreso', type: 'error' })
+    },
+  })
+
+  const updateExpenseMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => expenseService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', 'analytics'] })
+      setShowForm(false)
+      setEditing(null)
+      setSearchParams({})
+      toast({ message: 'Gasto actualizado', type: 'success' })
+    },
+    onError: () => {
+      toast({ message: 'Error al actualizar gasto', type: 'error' })
+    },
+  })
+
+  const deleteIncomeMutation = useMutation({
+    mutationFn: incomeService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomes', 'analytics'] })
+      toast({ message: 'Ingreso eliminado', type: 'success' })
+    },
+    onError: () => {
+      toast({ message: 'Error al eliminar ingreso', type: 'error' })
+    },
+  })
+
+  const deleteExpenseMutation = useMutation({
+    mutationFn: expenseService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', 'analytics'] })
+      toast({ message: 'Gasto eliminado', type: 'success' })
+    },
+    onError: () => {
+      toast({ message: 'Error al eliminar gasto', type: 'error' })
+    },
+  })
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+
+    let dateValue = formData.get('date') as string
+    if (!dateValue && formData.get('date_display')) {
+      const displayDate = formData.get('date_display') as string
+      if (displayDate && displayDate.length === 10) {
+        const [day, month, year] = displayDate.split('/')
+        dateValue = `${year}-${month}-${day}`
+      }
+    }
+
+    const data = {
+      categoryId: formData.get('categoryId') || undefined,
+      amount: parseFloat(formData.get('amount') as string),
+      currency: formData.get('currency') as string || 'ARS',
+      date: dateValue || formData.get('date'),
+      description: formData.get('description') || undefined,
+      ...(formType === 'expense' && {
+        paymentMethod: formData.get('paymentMethod') || undefined,
+      }),
+      ...(formType === 'income' && {
+        sourceType: formData.get('sourceType') || undefined,
+      }),
+    }
+
+    if (editing) {
+      if (editing._type === 'income') {
+        updateIncomeMutation.mutate({ id: editing.id, data })
+      } else {
+        updateExpenseMutation.mutate({ id: editing.id, data })
+      }
+    } else {
+      if (formType === 'income') {
+        createIncomeMutation.mutate(data as any)
+      } else {
+        createExpenseMutation.mutate(data as any)
+      }
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Transacciones"
+        description="Gestiona tus ingresos y gastos"
+        actions={
+          <Button
+            onClick={() => {
+              setFormType('expense')
+              setShowForm(true)
+              setEditing(null)
+            }}
+          >
+            + Nuevo Movimiento
+          </Button>
+        }
+        filters={
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-card border border-gray-200 dark:border-gray-700">
+            {[
+              { id: 'all', label: 'Todos' },
+              { id: 'income', label: 'Ingresos' },
+              { id: 'expense', label: 'Gastos' },
+            ].map((option) => (
+              <button
+                key={option.id}
+                onClick={() => setType(option.id as TransactionType)}
+                className={`
+                  px-3 py-1.5 rounded-md text-sm font-medium transition
+                  ${type === option.id
+                    ? 'bg-primary text-gray-900 shadow-sm'
+                    : 'text-gray-900 dark:text-gray-200 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }
+                `}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        }
+      />
+
+      {/* Formulario */}
+      {showForm && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-card p-6">
+          <h2 className="text-h3 font-semibold mb-4 text-gray-900 dark:text-white">
+            {editing ? 'Editar' : 'Nuevo'} {formType === 'income' ? 'Ingreso' : 'Gasto'}
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => setFormType('income')}
+                className={`
+                  flex-1 px-4 py-2 rounded-lg font-medium transition
+                  ${formType === 'income'
+                    ? 'bg-success text-gray-900'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }
+                `}
+              >
+                Ingreso
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormType('expense')}
+                className={`
+                  flex-1 px-4 py-2 rounded-lg font-medium transition
+                  ${formType === 'expense'
+                    ? 'bg-danger text-gray-900'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  }
+                `}
+              >
+                Gasto
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Monto *
+                </label>
+                <input
+                  type="number"
+                  name="amount"
+                  required
+                  defaultValue={editing?.amount}
+                  step="0.01"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <DateInput
+                name="date"
+                label="Fecha"
+                required
+                defaultValue={
+                  editing?.date ? new Date(editing.date).toISOString().split('T')[0] : ''
+                }
+              />
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Categoría {formType === 'expense' && '*'}
+                </label>
+                <select
+                  name="categoryId"
+                  required={formType === 'expense'}
+                  defaultValue={editing?.categoryId || ''}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Seleccionar</option>
+                  {(formType === 'income' ? incomeCategories : expenseCategories)?.map((cat: any) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Moneda
+                </label>
+                <select
+                  name="currency"
+                  defaultValue={editing?.currency || 'ARS'}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="ARS">ARS</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+              {formType === 'expense' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                    Método de Pago
+                  </label>
+                  <select
+                    name="paymentMethod"
+                    defaultValue={editing?.paymentMethod || ''}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Seleccionar</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="transferencia">Transferencia</option>
+                  </select>
+                </div>
+              )}
+              {formType === 'income' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                    Tipo de Ingreso
+                  </label>
+                  <input
+                    type="text"
+                    name="sourceType"
+                    defaultValue={editing?.sourceType || ''}
+                    placeholder="Ej: Salario, Freelance"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                Descripción
+              </label>
+              <textarea
+                name="description"
+                defaultValue={editing?.description || ''}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div className="flex gap-4">
+              <Button
+                type="submit"
+                loading={
+                  createIncomeMutation.isPending ||
+                  createExpenseMutation.isPending ||
+                  updateIncomeMutation.isPending ||
+                  updateExpenseMutation.isPending
+                }
+              >
+                {editing ? 'Actualizar' : 'Crear'}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setShowForm(false)
+                  setEditing(null)
+                  setSearchParams({})
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Lista de Transacciones */}
+      {filteredTransactions.length === 0 ? (
+        <EmptyState
+          icon="💸"
+          title="No hay transacciones"
+          description="Comienza agregando tu primer ingreso o gasto"
+          action={{
+            label: 'Agregar Movimiento',
+            onClick: () => {
+              setFormType('expense')
+              setShowForm(true)
+            },
+          }}
+        />
+      ) : (
+        <div className="space-y-2">
+          {filteredTransactions.map((transaction: any) => (
+            <div
+              key={transaction.id}
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-card p-4 flex items-center justify-between hover:shadow-card-hover transition cursor-pointer"
+              onClick={() => {
+                setEditing(transaction)
+                setFormType(transaction._type)
+                setShowForm(true)
+              }}
+            >
+              <div className="flex items-center gap-4 flex-1">
+                <div
+                  className={`
+                    w-12 h-12 rounded-lg flex items-center justify-center text-xl
+                    ${transaction._type === 'income'
+                      ? 'bg-success-soft dark:bg-green-900'
+                      : 'bg-danger-soft dark:bg-red-900'
+                    }
+                  `}
+                >
+                  {transaction.category?.icon || (transaction._type === 'income' ? '💰' : '💸')}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 dark:text-white truncate">
+                    {transaction.description || transaction.category?.name || 'Sin descripción'}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatDate(transaction.date)}
+                    </span>
+                    {transaction.paymentMethod && (
+                      <>
+                        <span className="text-xs text-gray-400">•</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {transaction.paymentMethod}
+                        </span>
+                      </>
+                    )}
+                    {transaction.sourceType && (
+                      <>
+                        <span className="text-xs text-gray-400">•</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {transaction.sourceType}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right flex items-center gap-3">
+                <div>
+                  <p
+                    className={`
+                      font-semibold text-lg
+                      ${transaction._type === 'income'
+                        ? 'text-success dark:text-green-400'
+                        : 'text-danger dark:text-red-400'
+                      }
+                    `}
+                  >
+                    {transaction._type === 'income' ? '+' : '-'}
+                    {formatCurrency(Number(transaction.amount), transaction.currency)}
+                  </p>
+                  <Badge variant={transaction._type === 'income' ? 'success' : 'danger'} size="sm">
+                    {transaction.currency}
+                  </Badge>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (transaction._type === 'income') {
+                      if (confirm('¿Eliminar este ingreso?')) {
+                        deleteIncomeMutation.mutate(transaction.id)
+                      }
+                    } else {
+                      if (confirm('¿Eliminar este gasto?')) {
+                        deleteExpenseMutation.mutate(transaction.id)
+                      }
+                    }
+                  }}
+                  className="text-gray-400 hover:text-danger transition p-2"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
