@@ -1,7 +1,10 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+// En producción, usar la misma URL (Vercel maneja las rutas /api)
+// En desarrollo, usar localhost
+const API_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD ? '/api' : 'http://localhost:3001')
 
 const api = axios.create({
   baseURL: API_URL,
