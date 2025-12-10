@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: guitaclara-frontend
+    env: node
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_ENV
+        value: production
+
