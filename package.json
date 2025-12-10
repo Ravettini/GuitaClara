@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "prisma:generate": "cd backend && npx prisma generate",
-    "postinstall": "cd backend && npx prisma generate"
+    "postinstall": "cd backend && npx prisma generate || true"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
