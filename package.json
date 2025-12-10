@@ -16,7 +16,7 @@
     "build:frontend": "cd frontend && npm run build",
     "prisma:generate": "cd backend && npx prisma generate",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "postinstall": "cd backend && npx prisma generate"
+    "postinstall": "cd backend && npx prisma generate || true"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
