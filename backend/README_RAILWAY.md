@@ -53,13 +53,15 @@ En Railway → Settings → Deploy:
 
 **Build Command:**
 ```bash
-npm install && npm run build
+npm install
 ```
 
 **Start Command:**
 ```bash
 npm start
 ```
+
+**Nota:** El script `start` ahora incluye el build automáticamente (`npm run build && node dist/index.js`), así que Railway solo necesita ejecutar `npm install` en el build command.
 
 **Nota:** Railway automáticamente ejecuta `npm install` antes del build, pero es bueno ser explícito.
 
