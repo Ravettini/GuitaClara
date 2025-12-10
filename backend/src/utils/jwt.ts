@@ -12,7 +12,7 @@ export const generateAccessToken = (userId: string): string => {
     throw new Error('JWT_SECRET not configured');
   }
 
-  return jwt.sign({ userId }, secret, { expiresIn });
+  return jwt.sign({ userId }, secret, { expiresIn } as any);
 };
 
 export const generateRefreshToken = (userId: string): string => {
@@ -23,7 +23,7 @@ export const generateRefreshToken = (userId: string): string => {
     throw new Error('JWT_REFRESH_SECRET not configured');
   }
 
-  return jwt.sign({ userId }, secret, { expiresIn });
+  return jwt.sign({ userId }, secret, { expiresIn } as any);
 };
 
 export const verifyRefreshToken = (token: string): TokenPayload => {

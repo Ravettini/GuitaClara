@@ -17,21 +17,34 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-const allowedOrigins = [
-  'http://localhost:5173',
-  process.env.FRONTEND_URL,
-].filter(Boolean) as string[];
+// Middleware - CORS Configuration
+const allowedOrigins: string[] = [];
+
+// En producción, solo permitir el frontend configurado
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
+// En desarrollo, permitir localhost del frontend
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push('http://localhost:5173');
+}
 
 app.use(cors({
   origin: (origin, callback) => {
     // Permitir requests sin origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
+    // En producción, solo permitir orígenes explícitos
+    if (process.env.NODE_ENV === 'production') {
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
+      }
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // En desarrollo, permitir cualquier origen
+      callback(null, true);
     }
   },
   credentials: true,

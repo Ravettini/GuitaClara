@@ -88,7 +88,7 @@ export const budgetService = {
     })
 
     if (!budget) {
-      throw new AppError('Presupuesto no encontrado', 404)
+      throw new AppError(404, 'Presupuesto no encontrado')
     }
 
     const expenses = await prisma.expense.aggregate({
@@ -131,7 +131,7 @@ export const budgetService = {
     })
 
     if (!category) {
-      throw new AppError('Categoría no encontrada o no válida para presupuestos', 404)
+      throw new AppError(404, 'Categoría no encontrada o no válida para presupuestos')
     }
 
     const budget = await prisma.budget.create({
@@ -160,7 +160,7 @@ export const budgetService = {
     })
 
     if (!existing) {
-      throw new AppError('Presupuesto no encontrado', 404)
+      throw new AppError(404, 'Presupuesto no encontrado')
     }
 
     if (data.categoryId) {
@@ -173,7 +173,7 @@ export const budgetService = {
       })
 
       if (!category) {
-        throw new AppError('Categoría no encontrada o no válida', 404)
+        throw new AppError(404, 'Categoría no encontrada o no válida')
       }
     }
 
@@ -203,7 +203,7 @@ export const budgetService = {
     })
 
     if (!existing) {
-      throw new AppError('Presupuesto no encontrado', 404)
+      throw new AppError(404, 'Presupuesto no encontrado')
     }
 
     await prisma.budget.delete({

@@ -249,15 +249,20 @@ export const getExpensesByCategory = async (
       if (!category) return null;
 
       const totalAmount = Number(item._sum.amount || 0);
-      return {
+      const expenseByCategory: ExpenseByCategory = {
         categoryId: item.categoryId || '',
         categoryName: category.name,
         total: totalAmount,
         percentage: total > 0 ? (totalAmount / total) * 100 : 0,
-        color: category.color || undefined,
       };
+      
+      if (category.color) {
+        expenseByCategory.color = category.color;
+      }
+      
+      return expenseByCategory;
     })
-    .filter((item): item is ExpenseByCategory => item !== null)
+    .filter((item): item is ExpenseByCategory => item !== null && item !== undefined)
     .sort((a, b) => b.total - a.total);
 
   return result;

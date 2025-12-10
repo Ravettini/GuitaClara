@@ -113,7 +113,7 @@ export const goalService = {
     })
 
     if (!goal) {
-      throw new AppError('Meta no encontrada', 404)
+      throw new AppError(404, 'Meta no encontrada')
     }
 
     // Calcular progreso (mismo cálculo que en getAll)
@@ -182,7 +182,7 @@ export const goalService = {
     })
 
     if (!existing) {
-      throw new AppError('Meta no encontrada', 404)
+      throw new AppError(404, 'Meta no encontrada')
     }
 
     const goal = await prisma.goal.update({
@@ -208,7 +208,7 @@ export const goalService = {
     })
 
     if (!existing) {
-      throw new AppError('Meta no encontrada', 404)
+      throw new AppError(404, 'Meta no encontrada')
     }
 
     await prisma.goal.delete({
