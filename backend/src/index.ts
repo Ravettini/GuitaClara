@@ -20,9 +20,28 @@ const PORT = process.env.PORT || 3001;
 // Middleware - CORS Configuration
 const allowedOrigins: string[] = [];
 
+// Función helper para normalizar URLs (agregar https:// si no tiene protocolo)
+const normalizeUrl = (url: string): string => {
+  url = url.trim();
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
+};
+
 // En producción, solo permitir el frontend configurado
 if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
+  // Soporte para múltiples URLs separadas por coma
+  const urls = process.env.FRONTEND_URL.split(',').map(u => normalizeUrl(u));
+  allowedOrigins.push(...urls);
+}
+
+// Agregar URL de Vercel por defecto si está en producción
+if (process.env.NODE_ENV === 'production') {
+  const vercelUrl = normalizeUrl('guitaclara.vercel.app');
+  if (!allowedOrigins.includes(vercelUrl)) {
+    allowedOrigins.push(vercelUrl);
+  }
 }
 
 // En desarrollo, permitir localhost del frontend
@@ -37,9 +56,22 @@ app.use(cors({
     
     // En producción, solo permitir orígenes explícitos
     if (process.env.NODE_ENV === 'production') {
-      if (allowedOrigins.includes(origin)) {
+      // Normalizar el origin recibido para comparación
+      const normalizedOrigin = normalizeUrl(origin);
+      
+      // Verificar si el origin está en la lista (con o sin protocolo)
+      const isAllowed = allowedOrigins.some(allowed => {
+        const normalizedAllowed = normalizeUrl(allowed);
+        return normalizedOrigin === normalizedAllowed || 
+               origin === allowed || 
+               origin === normalizedAllowed ||
+               normalizedOrigin === allowed;
+      });
+      
+      if (isAllowed) {
         callback(null, true);
       } else {
+        console.warn(`⚠️ CORS bloqueado: ${origin} (permitidos: ${allowedOrigins.join(', ')})`);
         callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
       }
     } else {

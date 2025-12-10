@@ -1,207 +1,101 @@
-# 🚂 Deploy del Backend en Railway
+# Deploy del Backend en Railway
 
-Este documento explica cómo desplegar el backend de GuitaClara en Railway.
+## ✅ Cambios Realizados
 
-## 📋 Prerrequisitos
+### 1. `backend/package.json`
+- **`"start"`**: Ahora solo ejecuta `node dist/index.js` (sin intentar hacer build)
+- **`"build"`**: Compila TypeScript y genera Prisma Client (`tsc && npm run prisma:generate`)
 
-- Cuenta en [Railway](https://railway.app)
-- Repositorio en GitHub con el código del backend
-- Base de datos PostgreSQL (Supabase recomendado)
+### 2. `backend/Dockerfile`
+- Ejecuta `npm run build` después de instalar dependencias
+- Usa `CMD ["npm", "start"]` en lugar de `npm run dev`
+- El build genera `dist/index.js` antes de iniciar el servidor
 
-## 🚀 Pasos para Deploy
+### 3. `backend/src/index.ts`
+- ✅ Ya usa `process.env.PORT || 3001` (correcto para Railway)
+- ✅ CORS configurado: `guitaclara.vercel.app` está incluido por defecto en producción
+- ✅ Soporte para múltiples URLs en `FRONTEND_URL` (separadas por coma)
+- ✅ Normalización automática de URLs (agrega `https://` si falta)
 
-### 1. Preparar el Repositorio
+## 🚀 Configuración en Railway
 
-**Opción A: Repo separado (Recomendado)**
+### Opción A: Usando Dockerfile (Recomendado)
 
-```bash
-cd backend
-git init
-git add .
-git commit -m "Backend listo para Railway"
-git branch -M main
-git remote add origin <URL_DEL_REPO_NUEVO_EN_GITHUB>
-git push -u origin main
-```
+Railway detectará automáticamente el `Dockerfile` en `/backend`:
 
-**Opción B: Usar el repo actual (monorepo)**
+1. **Root Directory**: `/backend` (o `backend`)
+2. **Build Command**: (No necesario, el Dockerfile lo maneja)
+3. **Start Command**: (No necesario, el Dockerfile lo maneja)
+4. **Port**: Railway lo asigna automáticamente a `process.env.PORT`
 
-Railway puede trabajar con monorepos configurando el Root Directory.
+### Opción B: Sin Dockerfile (Nixpacks)
 
-### 2. Crear Proyecto en Railway
+Si prefieres que Railway use Nixpacks (detección automática de Node.js):
 
-1. Ve a [railway.app](https://railway.app) y haz login con GitHub
-2. Click en **"New Project"**
-3. Selecciona **"Deploy from GitHub repo"**
-4. Elige tu repositorio:
-   - Si es repo separado: selecciona el repo del backend
-   - Si es monorepo: selecciona el repo completo
+1. **Root Directory**: `/backend` (o `backend`)
+2. **Build Command**: `npm install && npm run build`
+3. **Start Command**: `npm start`
+4. **Port**: Railway lo asigna automáticamente
 
-### 3. Configurar el Servicio
+## 📋 Variables de Entorno en Railway
 
-#### Si es Repo Separado:
-- Railway detectará automáticamente que es Node.js
-- No necesitas configurar Root Directory
+Configura estas variables en Railway → Settings → Variables:
 
-#### Si es Monorepo:
-1. En **Settings** → **Root Directory**: escribe `backend`
-2. Railway buscará el `package.json` en `/backend`
-
-### 4. Configurar Build y Start Commands
-
-En Railway → Settings → Deploy:
-
-**Build Command:**
-```bash
-npm install
-```
-
-**Start Command:**
-```bash
-npm start
-```
-
-**Nota:** El script `start` ahora incluye el build automáticamente (`npm run build && node dist/index.js`), así que Railway solo necesita ejecutar `npm install` en el build command.
-
-**Nota:** Railway automáticamente ejecuta `npm install` antes del build, pero es bueno ser explícito.
-
-### 5. Variables de Entorno
-
-En Railway → Variables, agrega las siguientes:
-
-#### Obligatorias:
-
-```
-NODE_ENV=production
-PORT=3001
-```
-
-**Nota:** Railway configura `PORT` automáticamente, pero puedes dejarlo por si acaso.
-
-```
-FRONTEND_URL=https://tu-frontend.vercel.app
-```
-Reemplaza con la URL real de tu frontend en Vercel.
-
-```
+```env
+# Base de datos
 DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
-```
-Tu connection string de Supabase o PostgreSQL.
 
-```
-JWT_SECRET=tu-secret-super-seguro-aqui
+# JWT
+JWT_SECRET=tu-jwt-secret-super-seguro-aqui
 JWT_REFRESH_SECRET=tu-refresh-secret-super-seguro-aqui
-```
-Genera valores aleatorios seguros (puedes usar `openssl rand -base64 32`).
-
-#### Opcionales:
-
-```
 JWT_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
+
+# Frontend (para CORS) - OPCIONAL
+# guitaclara.vercel.app ya está incluido por defecto en producción
+# Usa FRONTEND_URL solo si necesitas agregar URLs adicionales (separadas por coma)
+FRONTEND_URL=https://otra-url.com,https://otra-url-2.com
+
+# Entorno
+NODE_ENV=production
 ```
 
-### 6. Base de Datos
+**Notas**:
+- `PORT` no es necesario configurarlo manualmente, Railway lo asigna automáticamente.
+- `guitaclara.vercel.app` ya está permitido por defecto en producción (no necesitas configurarlo).
+- `FRONTEND_URL` es opcional y solo necesario si quieres agregar URLs adicionales.
 
-Si usas Supabase:
-1. Ya deberías tener la `DATABASE_URL` de Supabase
-2. Asegúrate de que tenga `?sslmode=require` al final
-3. Ejecuta las migraciones si es necesario:
-   - Railway puede ejecutar `npm run prisma:deploy` en el build
-   - O ejecuta manualmente: `npx prisma migrate deploy`
+## ✅ Verificación Local
 
-### 7. Deploy
-
-1. Railway detectará automáticamente los cambios y hará deploy
-2. O puedes hacer click en **"Deploy"** manualmente
-3. Espera a que termine el build
-4. Railway generará una URL automáticamente (ej: `tu-backend.railway.app`)
-
-### 8. Verificar
-
-1. Abre la URL de Railway en el navegador
-2. Deberías ver: `{"status":"ok","timestamp":"..."}` en `/health`
-3. Prueba desde el frontend que las llamadas funcionen
-
-## 🔧 Configuración Técnica
-
-### Puerto
-
-El servidor **siempre** escucha en `process.env.PORT` (Railway lo configura automáticamente).
-
-```typescript
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
-```
-
-### CORS
-
-El backend está configurado para:
-- **Producción**: Solo acepta requests del `FRONTEND_URL` configurado
-- **Desarrollo**: Acepta cualquier origen (incluyendo `localhost:5173`)
-
-### Build Process
-
-1. `npm install` - Instala dependencias
-2. `npm run build` - Compila TypeScript a JavaScript
-3. `npm run prisma:generate` - Genera Prisma Client
-4. `npm start` - Ejecuta `node dist/index.js`
-
-## 📝 Comandos Locales para Verificar
-
-Antes de deployar, verifica localmente:
+Antes de hacer deploy, verifica localmente:
 
 ```bash
 cd backend
-
-# Instalar dependencias
 npm install
-
-# Compilar TypeScript
 npm run build
-
-# Verificar que dist/index.js existe
-ls dist/
-
-# Ejecutar (necesitas .env configurado)
 npm start
 ```
 
-El servidor debería iniciar en el puerto configurado (por defecto 3001).
+Deberías ver:
+```
+🚀 Server running on http://localhost:3001
+```
 
-## 🐛 Troubleshooting
+Y el archivo `dist/index.js` debe existir después del build.
 
-### Error: "Cannot find module"
-- Verifica que `npm run build` se ejecutó correctamente
-- Asegúrate de que `dist/index.js` existe
+## 🔍 Troubleshooting
 
-### Error: "Port already in use"
-- Railway maneja el puerto automáticamente
-- No necesitas configurar PORT manualmente en Railway
+### Error: "Cannot find module '/app/dist/index.js'"
+- **Causa**: El build no se ejecutó correctamente
+- **Solución**: Verifica que el Dockerfile ejecute `npm run build` o que Railway tenga el Build Command configurado
 
-### Error de CORS
-- Verifica que `FRONTEND_URL` en Railway sea exactamente la URL de Vercel
-- Incluye `https://` y no dejes trailing slash
+### Error: "Prisma Client not generated"
+- **Causa**: `prisma generate` no se ejecutó
+- **Solución**: El script `build` ya incluye `npm run prisma:generate`, verifica que se ejecute
 
-### Error de Prisma
-- Asegúrate de que `DATABASE_URL` esté correctamente configurada
-- Verifica que Prisma Client se genere: `npm run prisma:generate`
-
-## ✅ Checklist Pre-Deploy
-
-- [ ] `package.json` tiene `"build"` y `"start"` scripts
-- [ ] `dist/index.js` se genera correctamente con `npm run build`
-- [ ] Variables de entorno configuradas en Railway
-- [ ] `FRONTEND_URL` apunta a tu frontend en Vercel
-- [ ] `DATABASE_URL` está configurada y funciona
-- [ ] JWT secrets están configurados
-- [ ] Health check responde en `/health`
-
-## 🔗 URLs Importantes
-
-- **Railway Dashboard**: https://railway.app/dashboard
-- **Documentación Railway**: https://docs.railway.app
-- **Supabase Dashboard**: https://supabase.com/dashboard
-
+### Error de CORS en producción
+- **Causa**: El origin no está en la lista de permitidos
+- **Solución**: 
+  - `guitaclara.vercel.app` ya está incluido por defecto en producción
+  - Si necesitas agregar más URLs, configura `FRONTEND_URL` en Railway (puedes usar múltiples URLs separadas por coma)
+  - Revisa los logs del servidor para ver qué origin está siendo bloqueado
