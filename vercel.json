@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build:frontend",
+  "buildCommand": "npm run build:frontend --workspace=finanzas-app",
   "outputDirectory": "frontend/dist",
   "framework": "vite",
   "installCommand": "npm install",
