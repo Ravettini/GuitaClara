@@ -8,6 +8,7 @@ import Summary from './pages/Summary'
 import Transactions from './pages/Transactions'
 import Investments from './pages/Investments'
 import Plans from './pages/Plans'
+import Calendar from './pages/Calendar'
 import More from './pages/More'
 import Settings from './pages/Settings'
 import Export from './pages/Export'
@@ -42,6 +43,7 @@ function App() {
           <Route path="transactions" element={<Transactions />} />
           <Route path="investments" element={<Investments />} />
           <Route path="plans" element={<Plans />} />
+          <Route path="calendar" element={<Calendar />} />
           <Route path="more" element={<More />} />
           <Route path="settings" element={<Settings />} />
           <Route path="export" element={<Export />} />

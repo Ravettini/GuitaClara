@@ -19,6 +19,7 @@ export default function AppLayout() {
     { path: '/app/transactions', label: 'Transacciones', icon: '💸' },
     { path: '/app/investments', label: 'Inversiones', icon: '📈' },
     { path: '/app/plans', label: 'Planes', icon: '🎯' },
+    { path: '/app/calendar', label: 'Calendario', icon: '📅' },
     { path: '/app/more', label: 'Más', icon: '⚙️' },
   ]
 
@@ -39,15 +40,23 @@ export default function AppLayout() {
         </button>
       </header>
 
-      <div className="flex w-full">
+      <div className="flex w-full relative">
+        {/* Overlay para mobile - fuera del sidebar */}
+        {sidebarOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/50 z-40"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
         <aside
           className={`${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg lg:shadow-none transition-transform duration-300`}
+          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg lg:shadow-none transition-transform duration-300 h-screen`}
         >
-          <div className="h-full flex flex-col">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="h-full flex flex-col bg-white dark:bg-gray-800">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
               <h2 className="text-xl font-bold text-primary dark:text-blue-400">
                 💰 GuitaClara
               </h2>
@@ -56,7 +65,7 @@ export default function AppLayout() {
               </p>
             </div>
 
-            <nav className="flex-1 p-4 space-y-2">
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto bg-white dark:bg-gray-800">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
@@ -74,7 +83,7 @@ export default function AppLayout() {
               ))}
             </nav>
 
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
@@ -84,14 +93,6 @@ export default function AppLayout() {
               </button>
             </div>
           </div>
-
-          {/* Overlay para mobile */}
-          {sidebarOpen && (
-            <div
-              className="lg:hidden fixed inset-0 bg-black/50 -z-10"
-              onClick={() => setSidebarOpen(false)}
-            />
-          )}
         </aside>
 
         {/* Main content */}

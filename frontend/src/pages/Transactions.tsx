@@ -74,6 +74,58 @@ export default function Transactions() {
     return t._type === type
   })
 
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 8
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex)
+
+  // Resetear página cuando cambia el filtro
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [type])
+
+  // Generar números de página inteligentes (con puntos suspensivos)
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = []
+    const maxVisible = 7 // Máximo de números visibles
+    
+    if (totalPages <= maxVisible) {
+      // Si hay pocas páginas, mostrar todas
+      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    }
+    
+    // Siempre mostrar primera página
+    pages.push(1)
+    
+    if (currentPage <= 3) {
+      // Cerca del inicio: 1, 2, 3, 4, ..., última
+      for (let i = 2; i <= 4; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(totalPages)
+    } else if (currentPage >= totalPages - 2) {
+      // Cerca del final: 1, ..., penúltima-2, penúltima-1, penúltima, última
+      pages.push('...')
+      for (let i = totalPages - 3; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      // En el medio: 1, ..., actual-1, actual, actual+1, ..., última
+      pages.push('...')
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(totalPages)
+    }
+    
+    return pages
+  }
+
   const createIncomeMutation = useMutation({
     mutationFn: incomeService.create,
     onSuccess: () => {
@@ -407,8 +459,9 @@ export default function Transactions() {
           }}
         />
       ) : (
-        <div className="space-y-2">
-          {filteredTransactions.map((transaction: any) => (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            {paginatedTransactions.map((transaction: any) => (
             <div
               key={transaction.id}
               className="bg-white dark:bg-gray-800 rounded-lg shadow-card p-4 hover:shadow-card-hover transition cursor-pointer"
@@ -585,6 +638,88 @@ export default function Transactions() {
               </div>
             </div>
           ))}
+          </div>
+
+          {/* Paginación */}
+          {totalPages > 1 && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-card p-4 mb-20 md:mb-0">
+              {/* Mobile: Solo anterior/siguiente y página actual */}
+              <div className="md:hidden flex items-center justify-between">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-600 transition text-sm"
+                >
+                  ← Anterior
+                </button>
+                <div className="text-xs text-gray-600 dark:text-gray-400 text-center">
+                  <div className="font-semibold text-gray-900 dark:text-white">
+                    Página {currentPage} de {totalPages}
+                  </div>
+                  <div className="text-xs mt-0.5">
+                    {startIndex + 1} - {Math.min(endIndex, filteredTransactions.length)} de {filteredTransactions.length}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-600 transition text-sm"
+                >
+                  Siguiente →
+                </button>
+              </div>
+
+              {/* Desktop: Paginación completa */}
+              <div className="hidden md:flex items-center justify-between">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Mostrando {startIndex + 1} - {Math.min(endIndex, filteredTransactions.length)} de {filteredTransactions.length} transacciones
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                  >
+                    Anterior
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {getPageNumbers().map((page, index) => {
+                      if (page === '...') {
+                        return (
+                          <span
+                            key={`ellipsis-${index}`}
+                            className="px-2 text-gray-500 dark:text-gray-400"
+                          >
+                            ...
+                          </span>
+                        )
+                      }
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page as number)}
+                          className={`px-3 py-2 rounded-lg border transition ${
+                            currentPage === page
+                              ? 'bg-primary text-gray-900 border-primary'
+                              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

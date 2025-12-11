@@ -98,11 +98,31 @@ export default function DateInput({
     }
   }
 
+  const handleToday = () => {
+    const today = new Date()
+    const day = String(today.getDate()).padStart(2, '0')
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const year = today.getFullYear()
+    const formatted = `${day}/${month}/${year}`
+    const iso = `${year}-${month}-${day}`
+    setDisplayValue(formatted)
+    setHiddenValue(iso)
+  }
+
   return (
     <div>
-      <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-        {label} {required && '*'}
-      </label>
+      <div className="flex items-center justify-between mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          {label} {required && '*'}
+        </label>
+        <button
+          type="button"
+          onClick={handleToday}
+          className="text-xs px-2 py-1 bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-400 rounded-md hover:bg-primary/20 dark:hover:bg-primary/30 transition font-medium"
+        >
+          Hoy
+        </button>
+      </div>
       <input
         type="text"
         name={`${name}_display`}
