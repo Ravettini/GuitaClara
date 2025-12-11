@@ -404,3 +404,163 @@ export const getCashFlow = async (
     .sort((a, b) => a.month.localeCompare(b.month));
 };
 
+// Tipos para alertas
+export type AlertSeverity = 'info' | 'warning' | 'danger';
+
+export type AlertType = 
+  | 'SPENDING_INCREASE' 
+  | 'LOW_SAVINGS_RATE' 
+  | 'INCOME_DROP' 
+  | 'DEPOSIT_MATURITY';
+
+export interface Alert {
+  type: AlertType;
+  severity: AlertSeverity;
+  message: string;
+}
+
+export const getAlerts = async (
+  userId: string,
+  options?: { now?: Date }
+): Promise<Alert[]> => {
+  const now = options?.now || new Date();
+  const alerts: Alert[] = [];
+
+  // Calcular períodos
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+  // 1. Comparar gastos por categoría: mes actual vs mes anterior
+  const currentMonthExpenses = await prisma.expense.groupBy({
+    by: ['categoryId'],
+    where: {
+      userId,
+      date: {
+        gte: currentMonthStart,
+        lte: now,
+      },
+    },
+    _sum: {
+      amount: true,
+    },
+  });
+
+  const previousMonthExpenses = await prisma.expense.groupBy({
+    by: ['categoryId'],
+    where: {
+      userId,
+      date: {
+        gte: previousMonthStart,
+        lte: previousMonthEnd,
+      },
+    },
+    _sum: {
+      amount: true,
+    },
+  });
+
+  // Obtener nombres de categorías
+  const categoryIds = [
+    ...new Set([
+      ...currentMonthExpenses.map(e => e.categoryId),
+      ...previousMonthExpenses.map(e => e.categoryId),
+    ]),
+  ];
+
+  const categories = await prisma.category.findMany({
+    where: {
+      id: { in: categoryIds },
+      userId,
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+
+  // Comparar gastos por categoría
+  for (const current of currentMonthExpenses) {
+    const categoryName = categoryMap.get(current.categoryId) || 'Sin categoría';
+    const currentAmount = Number(current._sum.amount || 0);
+    
+    const previous = previousMonthExpenses.find(
+      e => e.categoryId === current.categoryId
+    );
+    const previousAmount = previous ? Number(previous._sum.amount || 0) : 0;
+
+    // Si el gasto actual es >= 30% más que el anterior y es significativo (>$10.000 ARS)
+    if (previousAmount > 0 && currentAmount >= previousAmount * 1.3 && currentAmount > 10000) {
+      const increasePercent = Math.round(((currentAmount - previousAmount) / previousAmount) * 100);
+      alerts.push({
+        type: 'SPENDING_INCREASE',
+        severity: increasePercent >= 50 ? 'danger' : 'warning',
+        message: `Este mes gastaste ${increasePercent}% más en ${categoryName} que el mes pasado. Cuidado.`,
+      });
+    }
+  }
+
+  // 2. Calcular ratio de ahorro
+  const currentMonthSummary = await getSummary(userId, {
+    startDate: currentMonthStart,
+    endDate: now,
+  });
+
+  const totalIncome = Number(currentMonthSummary.totalIncome) + Number(currentMonthSummary.totalIncomeUSD);
+  const totalExpenses = Number(currentMonthSummary.totalExpenses) + Number(currentMonthSummary.totalExpensesUSD);
+
+  if (totalIncome > 0) {
+    const savingsRate = (totalIncome - totalExpenses) / totalIncome;
+
+    if (savingsRate < 0) {
+      alerts.push({
+        type: 'LOW_SAVINGS_RATE',
+        severity: 'danger',
+        message: 'Tus gastos superan tus ingresos este mes. Revisá tus finanzas urgentemente.',
+      });
+    } else if (savingsRate < 0.1 && totalIncome > 50000) {
+      alerts.push({
+        type: 'LOW_SAVINGS_RATE',
+        severity: 'warning',
+        message: `Tu tasa de ahorro es muy baja (${Math.round(savingsRate * 100)}%). Considerá reducir gastos.`,
+      });
+    }
+  }
+
+  // 3. Revisar plazos fijos que vencen pronto (próximos 7 días)
+  const sevenDaysFromNow = new Date(now);
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+  const maturingDeposits = await prisma.fixedTermDeposit.findMany({
+    where: {
+      userId,
+      computedMaturityDate: {
+        gte: now,
+        lte: sevenDaysFromNow,
+      },
+    },
+    select: {
+      principalAmount: true,
+      computedMaturityDate: true,
+      currency: true,
+    },
+  });
+
+  for (const deposit of maturingDeposits) {
+    const daysUntilMaturity = Math.ceil(
+      (deposit.computedMaturityDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const amount = Number(deposit.principalAmount);
+    
+    alerts.push({
+      type: 'DEPOSIT_MATURITY',
+      severity: daysUntilMaturity <= 3 ? 'warning' : 'info',
+      message: `Tenés un plazo fijo de $${amount.toLocaleString('es-AR')} ${deposit.currency} que vence en ${daysUntilMaturity} día${daysUntilMaturity !== 1 ? 's' : ''}.`,
+    });
+  }
+
+  return alerts;
+};
+

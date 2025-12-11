@@ -4,6 +4,7 @@ import {
   getExpensesByCategory,
   getIncomeVsExpense,
   getCashFlow,
+  getAlerts,
 } from '../controllers/analyticsController';
 import { authenticate } from '../middleware/auth';
 
@@ -14,6 +15,7 @@ router.get('/summary', getSummary);
 router.get('/expenses-by-category', getExpensesByCategory);
 router.get('/income-vs-expense', getIncomeVsExpense);
 router.get('/cashflow', getCashFlow);
+router.get('/alerts', getAlerts);
 
 export default router;
 

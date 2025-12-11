@@ -135,6 +135,11 @@ export const analyticsService = {
     api.get('/analytics/cashflow', {
       params: startDate && endDate ? { startDate, endDate } : {},
     }),
+  getAlerts: () => api.get('/analytics/alerts'),
+}
+
+export const assistantService = {
+  chat: (message: string) => api.post('/assistant/chat', { message }),
 }
 
 export const budgetService = {

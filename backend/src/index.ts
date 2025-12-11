@@ -11,6 +11,7 @@ import investmentRoutes from './routes/investments';
 import analyticsRoutes from './routes/analytics';
 import budgetRoutes from './routes/budgets';
 import goalRoutes from './routes/goals';
+import assistantRoutes from './routes/assistant';
 
 dotenv.config();
 
@@ -99,6 +100,7 @@ app.use('/investments', investmentRoutes);
 app.use('/analytics', analyticsRoutes);
 app.use('/budgets', budgetRoutes);
 app.use('/goals', goalRoutes);
+app.use('/assistant', assistantRoutes);
 
 // Error handler
 app.use(errorHandler);

@@ -150,3 +150,18 @@ export const getCashFlow = async (
   }
 };
 
+export const getAlerts = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.userId) throw new Error('Not authenticated');
+
+    const alerts = await analyticsService.getAlerts(req.userId);
+    res.json({ success: true, data: alerts });
+  } catch (error) {
+    next(error);
+  }
+};
+

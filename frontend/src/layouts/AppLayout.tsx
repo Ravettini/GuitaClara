@@ -20,13 +20,14 @@ export default function AppLayout() {
     { path: '/app/investments', label: 'Inversiones', icon: '📈' },
     { path: '/app/plans', label: 'Planes', icon: '🎯' },
     { path: '/app/calendar', label: 'Calendario', icon: '📅' },
+    { path: '/app/assistant', label: 'Asistente', icon: '🤖' },
     { path: '/app/more', label: 'Más', icon: '⚙️' },
   ]
 
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 w-full overflow-x-hidden">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 w-full overflow-hidden flex flex-col">
       {/* Mobile header */}
       <header className="lg:hidden bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between">
         <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
@@ -40,7 +41,7 @@ export default function AppLayout() {
         </button>
       </header>
 
-      <div className="flex w-full relative">
+      <div className="flex w-full relative flex-1 min-h-0 overflow-hidden">
         {/* Overlay para mobile - fuera del sidebar */}
         {sidebarOpen && (
           <div
@@ -53,7 +54,7 @@ export default function AppLayout() {
         <aside
           className={`${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg lg:shadow-none transition-transform duration-300 h-screen`}
+          } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 w-64 flex-shrink-0 bg-white dark:bg-gray-800 shadow-lg lg:shadow-none transition-transform duration-300 h-full`}
         >
           <div className="h-full flex flex-col bg-white dark:bg-gray-800">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
@@ -96,8 +97,8 @@ export default function AppLayout() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 lg:ml-0 pb-20 md:pb-0 w-full">
-          <div className="p-4 lg:p-6 lg:max-w-7xl lg:mx-auto w-full">
+        <main className="flex-1 lg:ml-0 pb-20 md:pb-0 w-full flex flex-col min-h-0 overflow-y-auto">
+          <div className="flex-1 flex flex-col p-4 lg:p-6 lg:max-w-7xl lg:mx-auto w-full min-h-0">
             <Outlet />
           </div>
         </main>

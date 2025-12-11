@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { analyticsService } from '../services/api'
 import { formatCurrency } from '../utils/format'
 import { StatCard, PageHeader, EmptyState } from '../components/ui'
+import AlertsCard from '../components/AlertsCard'
 import { useAuthStore } from '../store/authStore'
 import {
   LineChart,
@@ -212,6 +213,9 @@ export default function Summary() {
               />
             </div>
           </div>
+
+          {/* Alertas */}
+          <AlertsCard />
 
           {/* Gráfico Principal */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-card p-6">
