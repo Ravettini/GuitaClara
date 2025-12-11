@@ -7,12 +7,9 @@ const prisma = new PrismaClient();
 
 const DISCLAIMER = '⚠️ Esto no es asesoramiento financiero profesional. Son sugerencias generales basadas en tus datos. Ante dudas importantes, consultá con un/a profesional.';
 
-// Choose model via env var. Default: Gemma 3 for development (higher free-tier limits).
-const DEFAULT_MODEL_ID =
-  process.env.AI_MODEL ??
-  (process.env.NODE_ENV === 'production'
-    ? 'gemini-2.5-flash' // future production model (paid, better quality)
-    : 'gemma-3-4b-it');  // current default for dev (free tier, ~14.4K requests/day) - must include -it suffix
+// Choose model via env var. Default: Gemma 3 (higher free-tier limits, ~14.4K requests/day).
+// Must include -it suffix for instruction-tuned models.
+const DEFAULT_MODEL_ID = process.env.AI_MODEL ?? 'gemma-3-4b-it';
 
 // Intent detection types
 type AssistantIntent =
