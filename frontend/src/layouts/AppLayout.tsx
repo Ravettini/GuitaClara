@@ -14,16 +14,23 @@ export default function AppLayout() {
     navigate('/login')
   }
 
-  const navItems = [
+  // Verificar si el usuario es superadmin
+  const superAdminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL
+  const isSuperAdmin = superAdminEmail && user?.email?.toLowerCase() === superAdminEmail.toLowerCase()
+
+  const allNavItems = [
     { path: '/app/summary', label: 'Resumen', icon: '📊' },
     { path: '/app/transactions', label: 'Transacciones', icon: '💸' },
     { path: '/app/investments', label: 'Inversiones', icon: '📈' },
     { path: '/app/plans', label: 'Planes', icon: '🎯' },
     { path: '/app/calendar', label: 'Calendario', icon: '📅' },
     { path: '/app/assistant', label: 'Asistente', icon: '🤖' },
-    { path: '/app/admin', label: 'Admin', icon: '🛡️' },
+    { path: '/app/admin', label: 'Admin', icon: '🛡️', adminOnly: true },
     { path: '/app/more', label: 'Más', icon: '⚙️' },
   ]
+
+  // Filtrar items del menú según permisos
+  const navItems = allNavItems.filter(item => !item.adminOnly || isSuperAdmin)
 
   const isActive = (path: string) => location.pathname === path
 

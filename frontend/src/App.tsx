@@ -24,6 +24,25 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return isAuth ? <>{children}</> : <Navigate to="/login" replace />
 }
 
+function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, accessToken, user } = useAuthStore()
+  const isAuth = isAuthenticated && !!accessToken
+  
+  if (!isAuth) {
+    return <Navigate to="/login" replace />
+  }
+
+  // Verificar si el usuario es superadmin
+  const superAdminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL
+  const isSuperAdmin = superAdminEmail && user?.email?.toLowerCase() === superAdminEmail.toLowerCase()
+
+  if (!isSuperAdmin) {
+    return <Navigate to="/app/summary" replace />
+  }
+
+  return <>{children}</>
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -47,7 +66,14 @@ function App() {
           <Route path="plans" element={<Plans />} />
           <Route path="calendar" element={<Calendar />} />
           <Route path="assistant" element={<Assistant />} />
-          <Route path="admin" element={<AdminDashboard />} />
+          <Route
+            path="admin"
+            element={
+              <ProtectedAdminRoute>
+                <AdminDashboard />
+              </ProtectedAdminRoute>
+            }
+          />
           <Route path="more" element={<More />} />
           <Route path="settings" element={<Settings />} />
           <Route path="export" element={<Export />} />
