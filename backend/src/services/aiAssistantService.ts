@@ -423,8 +423,8 @@ Consulta literal del usuario:
     if (!rawText) {
       console.error(`[ERROR] ${DEFAULT_MODEL_ID} devolvió texto vacío o inválido (stream).`);
       throw new AppError(
-        'Error al comunicarse con el asistente. Por favor, intentá de nuevo.',
-        500
+        500,
+        'Error al comunicarse con el asistente. Por favor, intentá de nuevo.'
       );
     }
 
