@@ -179,12 +179,6 @@ export default function LandingPage() {
                 Funcionalidades
               </button>
               <button
-                onClick={() => scrollToSection('pricing')}
-                className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
-              >
-                Precios
-              </button>
-              <button
                 onClick={() => scrollToSection('security')}
                 className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
               >
@@ -237,12 +231,6 @@ export default function LandingPage() {
                 className="block w-full text-left py-2 text-gray-700 dark:text-gray-300 hover:text-primary"
               >
                 Funcionalidades
-              </button>
-              <button
-                onClick={() => scrollToSection('pricing')}
-                className="block w-full text-left py-2 text-gray-700 dark:text-gray-300 hover:text-primary"
-              >
-                Precios
               </button>
               <button
                 onClick={() => scrollToSection('security')}
@@ -543,8 +531,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Pricing Section */}
-        <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
+        {/* Pricing Section - Oculto temporalmente */}
+        {/* <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -599,7 +587,7 @@ export default function LandingPage() {
               />
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Testimonials */}
         <section className="py-20 px-4 sm:px-6 lg:px-8">
@@ -753,7 +741,6 @@ export default function LandingPage() {
               <h4 className="font-semibold text-white mb-4">Producto</h4>
               <ul className="space-y-2 text-sm">
                 <li><button onClick={() => scrollToSection('features')} className="hover:text-white transition-colors">Características</button></li>
-                <li><button onClick={() => scrollToSection('pricing')} className="hover:text-white transition-colors">Precios</button></li>
                 <li><Link to="/login" className="hover:text-white transition-colors">Iniciar sesión</Link></li>
               </ul>
             </div>
