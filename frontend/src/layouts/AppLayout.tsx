@@ -17,6 +17,16 @@ export default function AppLayout() {
   // Verificar si el usuario es superadmin
   const superAdminEmail = import.meta.env.VITE_SUPERADMIN_EMAIL
   const isSuperAdmin = superAdminEmail && user?.email?.toLowerCase() === superAdminEmail.toLowerCase()
+  
+  // Debug temporal - remover después
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Admin Debug:', {
+      superAdminEmail,
+      userEmail: user?.email,
+      isSuperAdmin,
+      envVar: import.meta.env.VITE_SUPERADMIN_EMAIL
+    })
+  }
 
   const allNavItems = [
     { path: '/app/summary', label: 'Resumen', icon: '📊' },
