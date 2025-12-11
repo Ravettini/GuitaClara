@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { incomeService, expenseService, categoryService } from '../services/api'
 import { formatDate, formatCurrency } from '../utils/format'
 import { PageHeader, EmptyState, Button, Badge } from '../components/ui'
@@ -346,19 +346,31 @@ export default function Transactions() {
                 <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                   Categoría {formType === 'expense' && '*'}
                 </label>
-                <select
-                  name="categoryId"
-                  required={formType === 'expense'}
-                  defaultValue={editing?.categoryId || ''}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">Seleccionar</option>
-                  {(formType === 'income' ? incomeCategories : expenseCategories)?.map((cat: any) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                {((formType === 'income' && (!incomeCategories || incomeCategories.length === 0)) ||
+                  (formType === 'expense' && (!expenseCategories || expenseCategories.length === 0))) ? (
+                  <div className="w-full px-4 py-3 border-2 border-yellow-300 dark:border-yellow-600 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      ⚠️ No tenés ninguna categoría creada.{' '}
+                      <Link to="/app/more" className="underline font-semibold">
+                        Andá a Más y creala
+                      </Link>
+                    </p>
+                  </div>
+                ) : (
+                  <select
+                    name="categoryId"
+                    required={formType === 'expense'}
+                    defaultValue={editing?.categoryId || ''}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Seleccionar</option>
+                    {(formType === 'income' ? incomeCategories : expenseCategories)?.map((cat: any) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">

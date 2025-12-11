@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 interface FABProps {
   onAction: (action: string) => void
@@ -11,9 +12,28 @@ interface FABProps {
 
 export function FAB({ onAction, actions }: FABProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const navigate = useNavigate()
 
   return (
-    <div className="fixed bottom-20 right-4 md:hidden z-50">
+    <div className="fixed bottom-20 right-4 md:hidden z-50 flex flex-col gap-3 items-end">
+      {/* Botón del Asistente - Flotante al lado del + */}
+      <button
+        onClick={() => navigate('/app/assistant')}
+        className="
+          w-14 h-14 rounded-full
+          bg-gradient-to-br from-purple-600 to-pink-600 text-white
+          shadow-elevated hover:shadow-lg
+          hover:from-purple-700 hover:to-pink-700
+          flex items-center justify-center text-2xl
+          transition-all transform hover:scale-105
+          ring-4 ring-purple-200/50
+        "
+        title="Asistente IA"
+      >
+        🤖
+      </button>
+
+      {/* Botón principal + */}
       {isOpen && (
         <div className="absolute bottom-16 right-0 flex flex-col gap-2 mb-2">
           {actions.map((action) => (
