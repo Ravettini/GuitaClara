@@ -167,5 +167,9 @@ export const goalService = {
   getSummary: () => api.get('/goals/summary'),
 }
 
+export const adminService = {
+  getStats: () => api.get('/admin/stats'),
+}
+
 export default api
 

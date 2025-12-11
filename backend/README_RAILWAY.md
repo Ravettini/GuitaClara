@@ -58,6 +58,10 @@ FRONTEND_URL=https://otra-url.com,https://otra-url-2.com
 
 # Entorno
 NODE_ENV=production
+
+# Admin Dashboard (OPCIONAL)
+# Email del superadmin que puede acceder al dashboard de administración
+SUPERADMIN_EMAIL=tu-email@ejemplo.com
 ```
 
 **Notas**:

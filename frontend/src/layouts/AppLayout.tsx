@@ -21,6 +21,7 @@ export default function AppLayout() {
     { path: '/app/plans', label: 'Planes', icon: '🎯' },
     { path: '/app/calendar', label: 'Calendario', icon: '📅' },
     { path: '/app/assistant', label: 'Asistente', icon: '🤖' },
+    { path: '/app/admin', label: 'Admin', icon: '🛡️' },
     { path: '/app/more', label: 'Más', icon: '⚙️' },
   ]
 

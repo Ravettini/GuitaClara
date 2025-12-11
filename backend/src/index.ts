@@ -12,6 +12,7 @@ import analyticsRoutes from './routes/analytics';
 import budgetRoutes from './routes/budgets';
 import goalRoutes from './routes/goals';
 import assistantRoutes from './routes/assistant';
+import adminRoutes from './routes/admin';
 
 dotenv.config();
 
@@ -101,6 +102,7 @@ app.use('/analytics', analyticsRoutes);
 app.use('/budgets', budgetRoutes);
 app.use('/goals', goalRoutes);
 app.use('/assistant', assistantRoutes);
+app.use('/admin', adminRoutes);
 
 // Error handler
 app.use(errorHandler);
