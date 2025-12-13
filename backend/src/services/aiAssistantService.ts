@@ -230,6 +230,52 @@ export async function askFinancialAssistant(
     throw new AppError(500, 'Error al obtener tus datos financieros. Por favor, intentá de nuevo.');
   }
 
+  // VALIDACIÓN CRÍTICA: Verificar si hay datos reales
+  const hasRealData = 
+    snapshot.summary.totalIncome > 0 ||
+    snapshot.summary.totalExpenses > 0 ||
+    snapshot.expensesByCategory.length > 0 ||
+    snapshot.investments.fixedTerms.count > 0 ||
+    snapshot.investments.portfolio.count > 0;
+
+  // Si no hay datos reales, responder directamente sin llamar a la IA
+  if (!hasRealData) {
+    return `Hola! 👋
+
+Todavía no tenés datos registrados en GuitaClara. Para que pueda ayudarte con tus finanzas, necesitás:
+
+• Registrar algunos ingresos o gastos
+• Crear categorías en la sección "Más"
+• Agregar transacciones en "Transacciones"
+
+Una vez que tengas datos, podré darte análisis y recomendaciones personalizadas.
+
+${DISCLAIMER}`;
+  }
+
+  // Detectar si la pregunta menciona a otra persona
+  const messageLower = message.toLowerCase();
+  const commonNames = ['ezequiel', 'paolillo', 'juan', 'maria', 'carlos', 'ana', 'pedro', 'laura'];
+  const mentionsOtherPerson = commonNames.some(name => messageLower.includes(name)) && 
+    !messageLower.includes('yo') && 
+    !messageLower.includes('mi') && 
+    !messageLower.includes('mis') &&
+    !messageLower.includes('mío') &&
+    !messageLower.includes('mía');
+
+  if (mentionsOtherPerson) {
+    return `Hola! 👋
+
+Solo puedo ayudarte con tus propios datos financieros registrados en GuitaClara. No tengo acceso a información de otras personas.
+
+Si querés analizar tus finanzas, podés preguntarme cosas como:
+• "¿En qué gasto más este mes?"
+• "¿Cuál es mi balance actual?"
+• "¿Cómo puedo ahorrar más?"
+
+${DISCLAIMER}`;
+  }
+
   // Detectar la intención de la pregunta
   const intent = detectIntent(message);
 
@@ -325,6 +371,15 @@ Reglas generales:
   2) 3 a 5 viñetas con los hallazgos principales.
   3) 3 a 5 viñetas con recomendaciones concretas.
 
+⚠️ REGLA CRÍTICA - NUNCA INVENTES DATOS:
+- SOLO podés usar los datos que están en el contexto JSON que te proporciono.
+- Si un dato NO está en el contexto JSON, NO existe. NO lo inventes.
+- Si no hay gastos en una categoría, NO digas que hay gastos ahí.
+- Si no hay inversiones, NO digas que hay inversiones.
+- Si no hay datos de un mes específico, NO inventes porcentajes ni montos.
+- Si la pregunta menciona a otra persona (que no sea el usuario), decí claramente que solo podés ayudar con los datos del usuario autenticado.
+- Si no tenés suficientes datos para responder, decilo EXPLÍCITAMENTE: "No tengo suficientes datos para responder esa pregunta" o "No hay información registrada sobre eso".
+
 MUY IMPORTANTE:
 - LEÉ con atención la pregunta del usuario y tu instrucción de tarea.
 - Respondé SIEMPRE a lo que te preguntan, no des el mismo análisis genérico en todas las respuestas.
@@ -336,6 +391,7 @@ MUY IMPORTANTE:
 Recordá:
 - La pregunta del usuario es TU guía principal.
 - Los datos de GuitaClara son contexto para dar ejemplos y reforzar tus recomendaciones.
+- Si un dato NO está en el JSON, NO existe. NO lo inventes bajo ninguna circunstancia.
 
 REGLAS IMPORTANTES:
 - Hablá en español argentino, con un tono cercano pero profesional.
@@ -343,7 +399,7 @@ REGLAS IMPORTANTES:
 - Usá frases como "podrías considerar...", "quizás te convenga revisar...", "sería bueno evaluar...".
 - Nunca prometas rendimientos específicos ni garantices resultados.
 - Sé empático y constructivo.
-- Si no hay suficientes datos, decilo claramente.`.trim();
+- Si no hay suficientes datos en el JSON, decilo claramente y NO inventes nada.`.trim();
 
   // Construir prompt completo con contexto, instrucción de tarea y pregunta del usuario
   const financialContextText = JSON.stringify(snapshot, null, 2);
@@ -351,14 +407,18 @@ REGLAS IMPORTANTES:
   const fullPrompt = `
 ${systemPrefix}
 
-Contexto de los datos financieros del usuario (resumen que ya calculaste en el backend):
+⚠️ DATOS FINANCIEROS DEL USUARIO (SOLO USA ESTOS DATOS, NO INVENTES NADA):
 ${financialContextText}
+
+IMPORTANTE: Si un dato NO está en el JSON de arriba, NO existe. NO lo inventes. Si no hay información sobre algo, decilo claramente.
 
 Instrucción de tarea para esta respuesta:
 ${taskInstruction}
 
 Consulta literal del usuario:
 "${message}"
+
+RECORDÁ: Solo podés usar los datos que están en el JSON. Si algo no está ahí, NO existe. NO lo inventes.
 `.trim();
 
   try {
